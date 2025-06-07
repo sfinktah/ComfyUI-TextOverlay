@@ -47,7 +47,7 @@ class TextOverlay:
                 ),  # Text to overlay
                 "font_size": (
                     "INT",
-                    {"default": 32, "min": 1, "max": 256, "step": 1},
+                    {"default": 32, "min": 1, "max": 9999, "step": 1},
                 ),  # Font size
                 "font": (
                     "STRING",
