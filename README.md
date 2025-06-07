@@ -51,6 +51,7 @@ The TextOverlay node requires the following inputs:
 - `horizontal_alignment`: Horizontal text alignment (`left`, `center`, `right`).
 - `vertical_alignment`: Vertical text alignment (`top`, `middle`, `bottom`).
 - `x_shift`, `y_shift`: Adjustments for text positioning.
+- `line_spacing`: Spacing between lines of text.
 
 ## Output
 

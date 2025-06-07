@@ -85,6 +85,10 @@ class TextOverlay:
                     "INT",
                     {"default": 0, "min": -128, "max": 128, "step": 1},
                 ),  # Vertical position adjustment
+                "line_spacing": (
+                    "FLOAT",
+                    {"default": 4.0, "min": 0.0, "max": 50.0, "step": 0.5},
+                ),  # Spacing between lines of text
             }
         }
 
@@ -123,6 +127,7 @@ class TextOverlay:
         vertical_alignment,
         x_shift,
         y_shift,
+        line_spacing,
         use_cache=False,
     ):
         """
@@ -141,6 +146,7 @@ class TextOverlay:
         - vertical_alignment (str): The vertical alignment of the text ('top', 'middle', 'bottom').
         - x_shift (int): Horizontal position adjustment for the text.
         - y_shift (int): Vertical position adjustment for the text.
+        - line_spacing (float): Spacing between lines of text.
         - use_cache (bool): Flag to use cached font and position calculations to improve performance.
 
         Returns:
@@ -195,6 +201,7 @@ class TextOverlay:
                 font=self._loaded_font,
                 stroke_width=int(font_size * stroke_thickness * 0.5),
                 align=horizontal_alignment,
+                spacing=line_spacing,
             )
             if horizontal_alignment == "left":
                 self._x = padding
@@ -220,6 +227,7 @@ class TextOverlay:
             stroke_width=int(font_size * stroke_thickness * 0.5),
             font=self._loaded_font,
             align=horizontal_alignment,
+            spacing=line_spacing,
         )
         return image
 
@@ -237,6 +245,7 @@ class TextOverlay:
         vertical_alignment,
         x_shift,
         y_shift,
+        line_spacing,
     ):
         """
         Processes a batch of images or a single image, adding the specified text overlay
@@ -255,6 +264,7 @@ class TextOverlay:
         - vertical_alignment (str): The vertical alignment of the text.
         - x_shift (int): Horizontal position adjustment for the text.
         - y_shift (int): Vertical position adjustment for the text.
+        - line_spacing (float): Spacing between lines of text.
 
         Returns:
         - tuple: A tuple containing the processed image(s) as a torch.Tensor.
@@ -277,6 +287,7 @@ class TextOverlay:
                 vertical_alignment,
                 x_shift,
                 y_shift,
+                line_spacing,
             )
             image_tensor_out = torch.tensor(np.array(image).astype(np.float32) / 255.0)
             image_tensor_out = torch.unsqueeze(image_tensor_out, 0)
@@ -299,6 +310,7 @@ class TextOverlay:
                     vertical_alignment,
                     x_shift,
                     y_shift,
+                    line_spacing,
                     use_cache,
                 )
                 images_out.append(np.array(img).astype(np.float32) / 255.0)
