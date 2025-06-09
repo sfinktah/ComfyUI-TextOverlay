@@ -38,6 +38,8 @@ class TextOverlay:
         - dict: A dictionary specifying required inputs and their attributes.
         """
 
+        file_list = cls.get_font_list()
+
         return {
             "required": {
                 "image": ("IMAGE",),  # Input image to overlay text on
@@ -49,10 +51,7 @@ class TextOverlay:
                     "INT",
                     {"default": 32, "min": 1, "max": 9999, "step": 1},
                 ),  # Font size
-                "font": (
-                    "STRING",
-                    {"default": "ariblk.ttf"},
-                ),  # Font name (e.g. arial.ttf)
+                "font_name": (file_list,),
                 "fill_color_hex": (
                     "STRING",
                     {"default": "#FFFFFF"},
@@ -63,7 +62,11 @@ class TextOverlay:
                 ),  # Text stroke color in hex
                 "stroke_thickness": (
                     "FLOAT",
-                    {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01},
+                    {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05},
+                ),  # Stroke thickness
+                "stroke_opacity": (
+                    "FLOAT",
+                    {"default": 0.4, "min": 0.0, "max": 1.0, "step": 0.1},
                 ),  # Stroke thickness
                 "padding": (
                     "INT",
@@ -97,38 +100,49 @@ class TextOverlay:
     FUNCTION = "batch_process"
     CATEGORY = "image/text"
 
-    def hex_to_rgb(self, hex_color):
+    @staticmethod
+    def hex_to_rgb(hex_color):
+        """Converts hex color to RGB tuple, supporting #RGB and #RRGGBB formats."""
+        return TextOverlay.hex_to_rgba(hex_color)[:-1]  # Return RGB values without alpha
+
+    @staticmethod
+    def hex_to_rgba(hex_color, opacity=1.0):
         """
-        Converts a hex color string to an RGB tuple.
-
-        Parameters:
-        - hex_color (str): The color in hex format as a string.
-
-        Returns:
-        - tuple: The color converted to an (R, G, B) tuple.
+        Converts hex color to RGBA tuple, supporting #RGB, #RGBA, #RRGGBB, #RRGGBBAA formats.
         """
-
         hex_color = hex_color.lstrip("#")
-        if len(hex_color) == 3:
-            hex_color = hex_color * 2
-        return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+        if len(hex_color) not in (3, 4, 6, 8):
+            raise ValueError(f"Invalid hex color format: {hex_color}")
+
+        # Expand 3/4-char hex to 6/8-char
+        if len(hex_color) in (3, 4):
+            hex_color = ''.join(c * 2 for c in hex_color)
+
+        # Convert to RGB values
+        rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+        # Get alpha from hex or opacity parameter
+        alpha = int(int(hex_color[6:8], 16) if len(hex_color) == 8 else 255 * opacity)
+
+        return rgb + (alpha,)
 
     def draw_text(
-        self,
-        image,
-        text,
-        font_size,
-        font,
-        fill_color_hex,
-        stroke_color_hex,
-        stroke_thickness,
-        padding,
-        horizontal_alignment,
-        vertical_alignment,
-        x_shift,
-        y_shift,
-        line_spacing,
-        use_cache=False,
+            self,
+            image,
+            text,
+            font_size,
+            font,
+            fill_color_hex,
+            stroke_color_hex,
+            stroke_thickness,
+            stroke_opacity,
+            padding,
+            horizontal_alignment,
+            vertical_alignment,
+            x_shift,
+            y_shift,
+            line_spacing,
+            use_cache=False,
     ):
         """
         Draws the specified text on the given image with the provided styling and alignment options.
@@ -180,8 +194,8 @@ class TextOverlay:
                 extra_line = "\n" in word
                 word = word.strip()
                 if (
-                    draw.textlength(line + word, font=self._loaded_font)
-                    < image.width - 2 * padding
+                        draw.textlength(line + word, font=self._loaded_font)
+                        < image.width - 2 * padding
                 ):
                     line += word + " "
                 else:
@@ -218,12 +232,16 @@ class TextOverlay:
                 self._y = image.height - (bottom - top) - padding
             self._y += y_shift
 
-        # Draw the processed text onto the image
+        # Convert colors to RGBA
+        fill_color = self.hex_to_rgba(fill_color_hex)
+        stroke_color = self.hex_to_rgba(stroke_color_hex, stroke_opacity)
+
+        # Single draw call with transparent stroke
         draw.text(
             (self._x, self._y),
             self._full_text,
-            fill=self.hex_to_rgb(fill_color_hex),
-            stroke_fill=self.hex_to_rgb(stroke_color_hex),
+            fill=fill_color,
+            stroke_fill=stroke_color,
             stroke_width=int(font_size * stroke_thickness * 0.5),
             font=self._loaded_font,
             align=horizontal_alignment,
@@ -232,20 +250,21 @@ class TextOverlay:
         return image
 
     def batch_process(
-        self,
-        image,
-        text,
-        font_size,
-        font,
-        fill_color_hex,
-        stroke_color_hex,
-        stroke_thickness,
-        padding,
-        horizontal_alignment,
-        vertical_alignment,
-        x_shift,
-        y_shift,
-        line_spacing,
+            self,
+            image,
+            text,
+            font_size,
+            font,
+            fill_color_hex,
+            stroke_color_hex,
+            stroke_thickness,
+            stroke_opacity,
+            padding,
+            horizontal_alignment,
+            vertical_alignment,
+            x_shift,
+            y_shift,
+            line_spacing,
     ):
         """
         Processes a batch of images or a single image, adding the specified text overlay
@@ -282,6 +301,7 @@ class TextOverlay:
                 fill_color_hex,
                 stroke_color_hex,
                 stroke_thickness,
+                stroke_opacity,
                 padding,
                 horizontal_alignment,
                 vertical_alignment,
@@ -318,6 +338,24 @@ class TextOverlay:
             images_np = np.stack(images_out)
             images_tensor = torch.from_numpy(images_np)
             return (images_tensor,)
+
+    @staticmethod
+    def get_font_list():
+        """
+        Retrieve the list of available font files in the fonts directory.
+
+        This method scans the `fonts` directory and compiles a list of all font files
+        with a `.ttf` extension. The `fonts` directory path is determined relative to
+        the current file's location.
+
+        Returns:
+            list[str]: List of font file names with a `.ttf` extension in the `fonts`
+            directory.
+        """
+        font_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "fonts")
+        file_list = [f for f in os.listdir(font_dir) if
+                     os.path.isfile(os.path.join(font_dir, f)) and f.lower().endswith(".ttf")]
+        return file_list
 
 
 # Mapping of node class names to their respective classes
