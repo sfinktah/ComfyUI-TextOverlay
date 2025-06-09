@@ -352,7 +352,7 @@ class TextOverlay:
             list[str]: List of font file names with a `.ttf` extension in the `fonts`
             directory.
         """
-        font_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "fonts")
+        font_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fonts")
         file_list = [f for f in os.listdir(font_dir) if
                      os.path.isfile(os.path.join(font_dir, f)) and f.lower().endswith(".ttf")]
         return file_list
