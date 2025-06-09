@@ -51,7 +51,7 @@ class TextOverlay:
                     "INT",
                     {"default": 32, "min": 1, "max": 9999, "step": 1},
                 ),  # Font size
-                "font_name": (file_list,),
+                "font": (file_list,),
                 "fill_color_hex": (
                     "STRING",
                     {"default": "#FFFFFF"},
