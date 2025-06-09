@@ -64,10 +64,6 @@ class TextOverlay:
                     "FLOAT",
                     {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05},
                 ),  # Stroke thickness
-                "stroke_opacity": (
-                    "FLOAT",
-                    {"default": 0.4, "min": 0.0, "max": 1.0, "step": 0.1},
-                ),  # Stroke thickness
                 "padding": (
                     "INT",
                     {"default": 16, "min": 0, "max": 128, "step": 1},
@@ -92,6 +88,10 @@ class TextOverlay:
                     "FLOAT",
                     {"default": 4.0, "min": 0.0, "max": 50.0, "step": 0.5},
                 ),  # Spacing between lines of text
+                "stroke_opacity": (
+                    "FLOAT",
+                    {"default": 0.4, "min": 0.0, "max": 1.0, "step": 0.1},
+                ),  # Stroke thickness
             }
         }
 
