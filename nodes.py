@@ -135,13 +135,13 @@ class TextOverlay:
             fill_color_hex,
             stroke_color_hex,
             stroke_thickness,
-            stroke_opacity,
             padding,
             horizontal_alignment,
             vertical_alignment,
             x_shift,
             y_shift,
             line_spacing,
+            stroke_opacity,
             use_cache=False,
     ):
         """
@@ -258,13 +258,13 @@ class TextOverlay:
             fill_color_hex,
             stroke_color_hex,
             stroke_thickness,
-            stroke_opacity,
             padding,
             horizontal_alignment,
             vertical_alignment,
             x_shift,
             y_shift,
             line_spacing,
+            stroke_opacity,
     ):
         """
         Processes a batch of images or a single image, adding the specified text overlay
@@ -301,13 +301,13 @@ class TextOverlay:
                 fill_color_hex,
                 stroke_color_hex,
                 stroke_thickness,
-                stroke_opacity,
                 padding,
                 horizontal_alignment,
                 vertical_alignment,
                 x_shift,
                 y_shift,
                 line_spacing,
+                stroke_opacity,
             )
             image_tensor_out = torch.tensor(np.array(image).astype(np.float32) / 255.0)
             image_tensor_out = torch.unsqueeze(image_tensor_out, 0)
