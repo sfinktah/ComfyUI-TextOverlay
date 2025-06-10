@@ -146,27 +146,7 @@ class TextOverlay:
     ):
         """
         Draws the specified text on the given image with the provided styling and alignment options.
-
-        Parameters:
-        - image (PIL.Image.Image): The image to draw text on.
-        - text (str): The text to overlay on the image.
-        - font_size (int): The font size of the text.
-        - font (str): The font type of the text.
-        - fill_color_hex (str): The fill color of the text in hex format.
-        - stroke_color_hex (str): The stroke color of the text in hex format.
-        - stroke_thickness (float): The thickness of the text stroke.
-        - padding (int): The padding around the text.
-        - horizontal_alignment (str): The horizontal alignment of the text ('left', 'center', 'right').
-        - vertical_alignment (str): The vertical alignment of the text ('top', 'middle', 'bottom').
-        - x_shift (int): Horizontal position adjustment for the text.
-        - y_shift (int): Vertical position adjustment for the text.
-        - line_spacing (float): Spacing between lines of text.
-        - use_cache (bool): Flag to use cached font and position calculations to improve performance.
-
-        Returns:
-        - PIL.Image.Image: The image with the text overlay applied.
         """
-
         # Load font from the fonts directory or use default if not found or specified to not use cache
         if self._loaded_font is None or use_cache is False:
             fonts_dir = os.path.join(os.path.dirname(__file__), "fonts")
@@ -183,8 +163,9 @@ class TextOverlay:
                 print(f"Error loading font: {e}... Using default font")
                 self._loaded_font = ImageFont.load_default(font_size)
 
-        # Prepare to draw on the image
-        draw = ImageDraw.Draw(image)
+        # Create a transparent layer for the text
+        txt = Image.new("RGBA", image.size, (255, 255, 255, 0))
+        draw = ImageDraw.Draw(txt)
 
         # Process text for multiline support and fit within image dimensions
         words = text.replace("\n", "\n ").split(" ")
@@ -236,7 +217,7 @@ class TextOverlay:
         fill_color = self.hex_to_rgba(fill_color_hex)
         stroke_color = self.hex_to_rgba(stroke_color_hex, stroke_opacity)
 
-        # Single draw call with transparent stroke
+        # Draw text on the transparent layer
         draw.text(
             (self._x, self._y),
             self._full_text,
@@ -247,7 +228,9 @@ class TextOverlay:
             align=horizontal_alignment,
             spacing=line_spacing,
         )
-        return image
+
+        # Composite the text layer onto the image
+        return Image.alpha_composite(image, txt)
 
     def batch_process(
             self,
@@ -331,6 +314,7 @@ class TextOverlay:
                     x_shift,
                     y_shift,
                     line_spacing,
+                    stroke_opacity,
                     use_cache,
                 )
                 images_out.append(np.array(img).astype(np.float32) / 255.0)
