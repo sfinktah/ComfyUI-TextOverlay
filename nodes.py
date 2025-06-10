@@ -228,9 +228,19 @@ class TextOverlay:
             align=horizontal_alignment,
             spacing=line_spacing,
         )
+        # Store original mode
+        original_mode = image.mode
 
-        # Composite the text layer onto the image
-        return Image.alpha_composite(image, txt)
+        # Convert the input image to RGBA if it isn't already
+        if original_mode != 'RGBA':
+            image = image.convert('RGBA')
+
+        # Composite the text layer onto the image and convert back to original mode
+        result = Image.alpha_composite(image, txt)
+        if original_mode != 'RGBA':
+            result = result.convert(original_mode)
+
+        return result
 
     def batch_process(
             self,
