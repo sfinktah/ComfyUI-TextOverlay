@@ -1,6 +1,7 @@
 import os
-
+import re
 import numpy as np
+import matplotlib.colors as mcolors
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
@@ -101,11 +102,6 @@ class TextOverlay:
     CATEGORY = "image/text"
 
     @staticmethod
-    def hex_to_rgb(hex_color):
-        """Converts hex color to RGB tuple, supporting #RGB and #RRGGBB formats."""
-        return TextOverlay.hex_to_rgba(hex_color)[:-1]  # Return RGB values without alpha
-
-    @staticmethod
     def hex_to_rgba(hex_color, opacity=1.0):
         """
         Converts hex color to RGBA tuple, supporting #RGB, #RGBA, #RRGGBB, #RRGGBBAA formats.
@@ -125,6 +121,31 @@ class TextOverlay:
         alpha = int(int(hex_color[6:8], 16) if len(hex_color) == 8 else 255 * opacity)
 
         return rgb + (alpha,)
+
+    @staticmethod
+    def parse_color(color_string, opacity=1.0):
+        """
+        Accept CSS-style colors, named, hex, rgba(), or three comma-separated decimals.
+        Always uses matplotlib for all conversion.
+        Returns (r, g, b, a) tuple, each 0–255.
+        """
+        color_string = color_string.strip()
+        # If input is three comma-separated numbers, convert to rgb(...) CSS string
+        rgb_match =re.fullmatch(r"\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*", color_string)
+        if rgb_match:
+            color_string = f"rgb({rgb_match.group(1)},{rgb_match.group(2)},{rgb_match.group(3)})"
+
+        try:
+            r, g, b, a = mcolors.to_rgba(color_string)
+            a = a * opacity
+            return (
+                int(round(r * 255)),
+                int(round(g * 255)),
+                int(round(b * 255)),
+                int(round(a * 255))
+            )
+        except Exception:
+            raise ValueError(f"Could not parse the color: {color_string}")
 
     def draw_text(
             self,
@@ -214,8 +235,8 @@ class TextOverlay:
             self._y += y_shift
 
         # Convert colors to RGBA
-        fill_color = self.hex_to_rgba(fill_color_hex)
-        stroke_color = self.hex_to_rgba(stroke_color_hex, stroke_opacity)
+        fill_color = self.parse_color(fill_color_hex)
+        stroke_color = self.parse_color(stroke_color_hex, stroke_opacity)
 
         # Draw text on the transparent layer
         draw.text(
